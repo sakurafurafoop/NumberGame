@@ -17,9 +17,13 @@ class ViewController: UIViewController {
     var themeNumber:Int = 0
     var gameNumber:Int = 0
     var turn:Bool = false //falseは1人めtrueは2人め
+    var result:Bool!
     var stageNumber:Int = 1
     
     var countDownTimer:Timer!
+    var countNum:Float = 5
+    
+    var limitTimer:Timer!
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -31,11 +35,13 @@ class ViewController: UIViewController {
     func decideTheme(){
         themeNumber = Int.random(in: 10...20)
         themeText.text = String(themeNumber)
-        countDownTimer = Timer.scheduledTimer(timeInterval: 5, target: self, selector: #selector(self.stageLose), userInfo: nil, repeats: false)
+        countNum = 5
+        countDownTimer = Timer.scheduledTimer(timeInterval: 0.1, target: self, selector: #selector(self.displaySlider), userInfo: nil, repeats: true)
+        limitTimer = Timer.scheduledTimer(timeInterval: 5, target: self, selector: #selector(self.stage), userInfo: nil, repeats: false)
     }
     
     func nextStage() {
-        countDownTimer.invalidate()
+        limitTimer.invalidate()
         gameNumber = 0
         gameText.text = String(gameNumber)
         decideTheme()
@@ -61,8 +67,20 @@ class ViewController: UIViewController {
         }
     }
     
-    func stageWin(){
-        resultImage.image = UIImage(named: "good")
+    @objc func displaySlider(){
+        countNum = countNum - 0.1
+        countDownSlider.value = countNum
+    }
+    
+    //trueが勝ち,falseが負け
+    @objc func stage(){
+        countDownTimer.invalidate()
+        switch result {
+        case true:
+            resultImage.image = UIImage(named: "good")
+        default:
+            resultImage.image = UIImage(named: "bad")
+        }
         if(stageNumber <= 9){
             nextStage()
         }
@@ -71,29 +89,19 @@ class ViewController: UIViewController {
         }
     }
     
-    @objc func stageLose() {
-        resultImage.image = UIImage(named: "bad")
-        if(stageNumber <= 9){
-            nextStage()
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            self.resultImage.image = nil
-        }
-    }
-    
-    @IBAction func pushButton(buttonNum:Int){
+    @IBAction func pushButton(sender:UIButton){
         turn = !turn
-        gameNumber = gameNumber + 1;
-        print(gameNumber)
+        gameNumber = gameNumber + sender.tag;
+        
         gameText.text = String(gameNumber)
         
         if(gameNumber == themeNumber){
-            
-            stageWin()
+            result = true
+            stage()
             
         }else if(gameNumber > themeNumber){
-            
-            stageLose()
+            result = false
+            stage()
         }
         enableButton()
         
